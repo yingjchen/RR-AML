@@ -1,7 +1,7 @@
 ###The script contains the code to train and test the sample-specific XGBoost model, predict combination responses and calculate the t-NSE scores.
 ###load the necessary packages
 
-pkgs <- c("dplyr","Seurat","HGNChelper", "copykat","readr","ggplot2", "parallel", "HGNChelper", "GSVA", "xgboost", "Seurat")
+pkgs <- c("dplyr","Seurat","HGNChelper", "copykat","readr","ggplot2", "parallel", "HGNChelper", "GSVA", "xgboost", "caret", "ModelMetrics")
 lapply(pkgs, library, character.only = T)
 
 
@@ -15,7 +15,7 @@ setwd(dir = path_to_working_directory)
 Expression_data <- readRDS( './exampleData/AML2R_lognorm_res0.8_10092024.rds' )    ##from zenodo ??
 ###UMAP showing cell type identification with scType (https://github.com/IanevskiAleksandr/sc-type)
 DimPlot(Expression_data, reduction = "umap", label = !0, repel = !0, group.by = 'customclassif') +
-  xlab('UMAP 1')
+  xlab('UMAP1') + ylab('UMAP2') + theme_classic()
 ggsave('./Figures/umap_sctype.png',  width = 10, height = 10, dpi = 300)
 
 ###check gene symbols
@@ -64,7 +64,7 @@ DimPlot(Expression_data, reduction = "umap",label = F, repel = TRUE,  group.by =
   guides(color = guide_legend(override.aes = list(size = 6), ncol =1)) +
   scale_color_manual(labels = c('Aneuploid', 'Diploid', NA), values = c('#4C78B9','#08bf2f', '#bcbcbc'), breaks = c('Group_1', 'Group_2', 'Unselected')) + 
   ggtitle( '') +  xlab('UMAP1') + ylab('UMAP2') + labs(colour = "") + theme_classic()
-ggsave(paste0(path0, './Figures/umap_copykat.png'),  width = 10, height = 10, dpi = 300)
+ggsave( './Figures/umap_copykat.png',  width = 10, height = 10, dpi = 300)
 ##### Optional CopyKAT analysis #####
 
 
@@ -74,13 +74,13 @@ path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo.csv'
 dss_aml1 <- read.csv(path_to_DrugInfo, header = T,sep = ',', check.names = F)
 
 ###remove drugs with dubious DSS
-dss_aml1 <- dss_aml1[dss_aml1$dubious == 'False',]; dim(dss_aml1)
+dss_aml1 <- dss_aml1[dss_aml1$dubious == FALSE,]; dim(dss_aml1)
 ###remove drugs without target information
-dss_aml1 <- dss_aml1[dss_aml1[["TARGETS_JOINED2"]]!="",]; dim(dss_aml1)
+dss_aml1 <- dss_aml1[dss_aml1[["targets_joined"]]!="",]; dim(dss_aml1)
 
 ###check gene symbols
 gs_ <- lapply(dss_aml1$drug, function(d_){ 
-  genesInSelectedSets = as.character(dss_aml1[dss_aml1$drug == d_, "TARGETS_JOINED2"])
+  genesInSelectedSets = as.character(dss_aml1[dss_aml1$drug == d_, "targets_joined"])
   
   # Find gene synonyms
   geneSynonymsMix = unique(na.omit(checkGeneSymbols(unique(unlist(strsplit(genesInSelectedSets,","))))$Suggested.Symbol))
@@ -152,8 +152,8 @@ des <- expand.grid(
   eta = seq(0.01, 0.3, length.out = 5),
   min_child = seq(1, 5, by = 1),
   max_depth = seq(3, 6, by = 1),
-  #nrounds = 2**seq(6, 10, by = 1),
   lambda = c(1, 2)
+  #nrounds = 2**seq(6, 10, by = 1)
 )
 des <- des[1:5, ]
 CORvalgl <<- list()
@@ -162,7 +162,7 @@ CORvalgl <<- list()
 ###generate an objective function and start training
 obj.fun = function(x) {
   
-  lambda = x[6]; maxdepth = x[5]; colsample_bytree = x[1]; subsample = x[2]; eta = x[3]; minchild = x[4]; MAE_ <- 0; RMSE_ <- 0; 
+  colsample_bytree = x[1]; subsample = x[2]; eta = x[3]; minchild = x[4]; maxdepth = x[5]; lambda = x[6]; MAE_ <- 0; RMSE_ <- 0; 
   COR_ <- 0; COR2_ <- 0; CORval = as.data.frame(cbind(rep(NA, nrow(processed_data)),rep(NA, nrow(processed_data)),rep(NA, nrow(processed_data))))
   
   # repeated CV
@@ -218,6 +218,7 @@ pred_CV = do.call("cbind",lapply(CORvalgl_top, function(i){
 
 # just check how well average out-of-fold predictions correlate with real drug responses
 plot(rowMeans(pred_CV), as.numeric(as.character(processed_data$labeloutput)))
+ggsave( './Figures/scatter_AML2R_withoutCP.png',  width = 10, height = 10, dpi = 300)
 cor(rowMeans(pred_CV), as.numeric(as.character(processed_data$labeloutput)))
 
 
@@ -237,13 +238,14 @@ des_err <- expand.grid(
   eta = seq(0.01, 0.3, length.out = 5),
   min_child = seq(1, 5, by = 1),
   max_depth = seq(3, 6, by = 1),
-  #nrounds = 2**seq(6, 10, by = 1),
-  lambda = c(1, 2) )
+  lambda = c(1, 2) 
+  #nrounds = 2**seq(6, 10, by = 1)
+  )
 
 ###generate an objective function and start training
 obj.fun = function(x) {
   
-  lambda = x[6]; maxdepth = x[5]; colsample_bytree = x[1]; subsample = x[2]; eta = x[3]; minchild = x[4]; RMSE_ <- 0; 
+  colsample_bytree = x[1]; subsample = x[2]; eta = x[3]; minchild = x[4]; maxdepth = x[5]; lambda = x[6]; RMSE_ <- 0; 
   CORval_err = as.data.frame(cbind(rep(NA, nrow(processed_data_err)),rep(NA, nrow(processed_data_err)),rep(NA, nrow(processed_data_err))))
   
   # repeated CV
@@ -296,8 +298,8 @@ pred_to_remove <- grep(paste(rownames(processed_data)[alpha > quantile(alpha, co
 
 wh = alpha < alphas[length(alphas)*confidence_level]
 plot(rowMeans(pred_CV)[wh], as.numeric(as.character(processed_data$labeloutput))[wh])
+ggsave( './Figures/scatter_AML2R_withCP.png',  width = 10, height = 10, dpi = 300)
 cor(rowMeans(pred_CV)[wh], as.numeric(as.character(processed_data$labeloutput))[wh])
-cor(rowMeans(pred_CV), as.numeric(as.character(processed_data$labeloutput)))
 ###Conformal end###
 
 
