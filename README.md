@@ -8,7 +8,7 @@ We develop a systematic combinatorial design strategy that uses machine learning
 
 
 # Requirements
-## To install all dependencies, the version of R should be >= 4.0.5. The required packages and their recommended versions are as follows:
+To install all dependencies, the version of R should be >= 4.0.5. The required packages and their recommended versions are as follows:
 ModelMetrics_1.2.2.2 
 caret_6.0-92         
 parallel_4.0.5     
