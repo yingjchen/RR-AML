@@ -8,18 +8,18 @@ We develop a systematic combinatorial design strategy that uses machine learning
 
 
 # Requirements
+
 To install all dependencies, the version of R should be >= 4.0.5. The required packages and their recommended versions are as follows:
-ModelMetrics_1.2.2.2 
-caret_6.0-92         
-parallel_4.0.5     
-xgboost_1.5.1.1      
-GSVA_1.38.2          
-ggplot2_3.3.6       
-readr_2.1.2          
-copykat_1.0.8        
-HGNChelper_0.8.1    
-Seurat_4.1.1         
-dplyr_1.0.9
+-
+
+```r
+[1] ModelMetrics_1.2.2.2 caret_6.0-92         parallel_4.0.5     
+[4] xgboost_1.5.1.1      GSVA_1.38.2          ggplot2_3.3.6       
+[7] readr_2.1.2          copykat_1.0.8        HGNChelper_0.8.1    
+[10] dplyr_1.0.9   Seurat_4.1.1        
+
+```
+
 
 
 # Contact information
