@@ -1,8 +1,25 @@
 # Prediction of selective and synergistic drug combinations for relapsed AML
 
 We develop a systematic combinatorial design strategy that uses machine learning to prioritise the most promising targeted drug combinations for relapsed/refractory AML (**RR-AML**) patients using single-cell transcriptomics and single-agent response profiles measured in primary patient samples. By utilizng the established target-based Normalized Single-cell Enrichment (**t-NSE**) score, we can quantitatively compare the co-inhibition effects of drug combinations among various cell types and prioritize combinations that exhibit high synergy and potency in co-inhibiting AML cells, while showing non-synergistic effects in non-malignant cells. The following figure illustrates the workflow of the drug combination prediction and testing pipeline.
-![Workflow](./Figures/Workflow1.png)
 
+<p align = "center">
+    <img src="./Figures/Workflow1.png" alt="Workflow..." style="width:90%; height: 90%" height="90%" width="90%"/>
+</p>
+
+
+# Requirements
+## To install all dependencies, the version of R should be >= 4.0.5. The required packages and their recommended versions are as follows:
+ModelMetrics_1.2.2.2 
+caret_6.0-92         
+parallel_4.0.5     
+xgboost_1.5.1.1      
+GSVA_1.38.2          
+ggplot2_3.3.6       
+readr_2.1.2          
+copykat_1.0.8        
+HGNChelper_0.8.1    
+Seurat_4.1.1         
+dplyr_1.0.9
 
 
 # Contact information
