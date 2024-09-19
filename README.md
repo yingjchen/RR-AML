@@ -14,7 +14,7 @@ To install all dependencies, the version of R should be >= 4.0.5. The required p
 [1] ModelMetrics_1.2.2.2 caret_6.0-92         parallel_4.0.5     
 [4] xgboost_1.5.1.1      Seurat_4.1.1          ggplot2_3.3.6       
 [7] readr_2.1.2          copykat_1.0.8        HGNChelper_0.8.1    
-[10] dplyr_1.0.9                
+[10] dplyr_1.0.9          lhs_1.2.0          ParamHelpers_1.14.1                
 
 ```
 
