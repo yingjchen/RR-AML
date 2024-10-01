@@ -6,8 +6,12 @@ lapply(pkgs, library, character.only = T)
 
 
 ###replace the working directory replace '/path/to/working/directory/' with the desired path
-path_to_working_directory <- "/Users/yingche/Desktop/AMLcombo_1304/manuscript18122023/RR-AML"
+path_to_working_directory <- '/path/to/working/directory/'
 setwd(dir = path_to_working_directory)
+
+download.file(url = 'https://github.com/yingjchen/RR-AML/archive/refs/heads/main.zip', destfile = 'RR-AML-main.zip')
+unzip('RR-AML-main.zip') 
+setwd(dir = file.path(path_to_working_directory, 'RR-AML-main'))
 
 
 ##### Step 1: load and process the scRNA-seq data #####
@@ -384,6 +388,3 @@ Combinations_ = Combinations_[Combinations_$Synergy > 5]
 Combinations_ = Combinations_[Combinations_$pred > quantile(Combinations_$pred, .9),]
 ###select combinations with higher t-NSE score differences between the cancer and normal cells 
 Combinations_ = Combinations_[Combinations_$selective_toxicity > quantile(Combinations_$selective_toxicity, .5),]
-
-
-
