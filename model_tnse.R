@@ -12,7 +12,8 @@ setwd(dir = path_to_working_directory)
 
 ##### Step 1: load and process the scRNA-seq data #####
 ###normalized single cell data with cell types annotated with ScType, and defined malignant and non-malignnat cells
-Expression_data <- readRDS( './exampleData/AML2R_lognorm_res0.8_10092024.rds' )    ##from zenodo ??
+###Take the relapsed AML2 sample as an example 
+Expression_data <- readRDS( './exampleData/scAML2R_re.rds' )    ##from zenodo ??
 ###UMAP showing cell type identification with scType (https://github.com/IanevskiAleksandr/sc-type)
 DimPlot(Expression_data, reduction = "umap", label = !0, repel = !0, group.by = 'customclassif') +
   xlab('UMAP1') + ylab('UMAP2') + theme_classic()
@@ -70,17 +71,15 @@ ggsave( './Figures/umap_copykat.png',  width = 10, height = 10, dpi = 300)
 
 ##### Step 2: process drug-target interactions #####
 ###load the compound information, including the drug sensitivity scores (DSS) and drug targets 
-path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo.csv' 
+path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2R.csv' 
 dss_aml1 <- read.csv(path_to_DrugInfo, header = T,sep = ',', check.names = F)
 
-###remove drugs with dubious DSS
-dss_aml1 <- dss_aml1[dss_aml1$dubious == FALSE,]; dim(dss_aml1)
 ###remove drugs without target information
-dss_aml1 <- dss_aml1[dss_aml1[["targets_joined"]]!="",]; dim(dss_aml1)
+dss_aml1 <- dss_aml1[dss_aml1[["TargetSet"]]!="",]; dim(dss_aml1)
 
 ###check gene symbols
-gs_ <- lapply(dss_aml1$drug, function(d_){ 
-  genesInSelectedSets = as.character(dss_aml1[dss_aml1$drug == d_, "targets_joined"])
+gs_ <- lapply(dss_aml1$Drug, function(d_){ 
+  genesInSelectedSets = as.character(dss_aml1[dss_aml1$Drug == d_, "TargetSet"])
   
   # Find gene synonyms
   geneSynonymsMix = unique(na.omit(checkGeneSymbols(unique(unlist(strsplit(genesInSelectedSets,","))))$Suggested.Symbol))
@@ -93,7 +92,7 @@ gs_ <- lapply(dss_aml1$drug, function(d_){
 
 dss_aml1 = dss_aml1[!sapply(gs_, function(i) length(i)==0),]
 gs_ = gs_[!sapply(gs_, function(i) length(i)==0)]
-names(gs_) = as.character(dss_aml1$drug)
+names(gs_) = as.character(dss_aml1$Drug)
 
 
 ##### Step 3: prepare the binarized drug/combo-gene interaction matrix; generate expression enrichment matrices for compounds and combinations #####
@@ -117,7 +116,8 @@ drug_cell_enrichMat <- drug_gene_matrix %*% scale_data[gene_union, ]
 AllCombinations = expand.grid(names(gs_),names(gs_),stringsAsFactors = FALSE)
 AllCombinations = AllCombinations[AllCombinations$Var1 != AllCombinations$Var2, ]
 
-AllCombinations$merged = sapply(1:nrow(AllCombinations), function(i) paste0(sort(AllCombinations[i,]), collapse = ","))  #131406
+
+AllCombinations$merged = sapply(1:nrow(AllCombinations), function(i) paste0(sort(unlist(AllCombinations[i,])), collapse = ","))  #131406
 AllCombinations$Var1 = AllCombinations$Var2 = NULL; AllCombinations_unique = unique(AllCombinations$merged)  #remove the replicated combos 65703
 
 ###target sets of combinations
@@ -147,15 +147,18 @@ processed_data = as.data.frame(drug_cell_enrichMat); processed_data$labeloutput 
 ###use grid search and 5-fold cross validation to fine-tune the xgboost model
 ###parameter set
 des <- expand.grid(
-  colsample_bytree = seq(0.3, 0.8, length.out = 5), 
+  colsample_bytree = seq(0.3, .8, length.out = 5), 
   subsample = seq(0.5, 1.0, length.out = 5), 
   eta = seq(0.01, 0.3, length.out = 5),
-  min_child = seq(1, 5, by = 1),
-  max_depth = seq(3, 6, by = 1),
-  lambda = c(1, 2)
+  min_child = 1,
+  max_depth = 6,
+  lambda = 1
+  #min_child = seq(3, 4, by = 1),
+  #max_depth = seq(3, 4, by = 1),
+  #lambda = c(1, 2). #(1,2)
   #nrounds = 2**seq(6, 10, by = 1)
 )
-des <- des[1:5, ]
+
 CORvalgl <<- list()
 
 ###Source code: https://github.com/IanevskiAleksandr/scComb
@@ -232,15 +235,18 @@ processed_data_err = processed_data; processed_data_err$labeloutput = err_;
 CORvalgl_err <<- list()
 
 ###parameter set
-des_err <- expand.grid(
-  colsample_bytree = seq(0.3, 0.8, length.out = 5), 
+des <- expand.grid(
+  colsample_bytree = seq(0.3, .8, length.out = 5), 
   subsample = seq(0.5, 1.0, length.out = 5), 
   eta = seq(0.01, 0.3, length.out = 5),
-  min_child = seq(1, 5, by = 1),
-  max_depth = seq(3, 6, by = 1),
-  lambda = c(1, 2) 
+  min_child = 1,
+  max_depth = 6,
+  lambda = 1
+  #min_child = seq(3, 4, by = 1),
+  #max_depth = seq(3, 4, by = 1),
+  #lambda = c(1, 2). #(1,2)
   #nrounds = 2**seq(6, 10, by = 1)
-  )
+)
 
 ###generate an objective function and start training
 obj.fun = function(x) {
