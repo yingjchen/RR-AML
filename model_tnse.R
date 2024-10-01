@@ -17,7 +17,7 @@ setwd(dir = file.path(path_to_working_directory, 'RR-AML-main'))
 ##### Step 1: load and process the scRNA-seq data #####
 ###normalized single cell data with cell types annotated with ScType, and defined malignant and non-malignnat cells
 ###Take the relapsed AML2 sample as an example 
-Expression_data <- readRDS( './exampleData/scAML2R_re.rds' )    ##from zenodo ??
+Expression_data <- readRDS( './exampleData/scAML2R_re.rds' )    
 ###UMAP showing cell type identification with scType (https://github.com/IanevskiAleksandr/sc-type)
 DimPlot(Expression_data, reduction = "umap", label = !0, repel = !0, group.by = 'customclassif') +
   xlab('UMAP1') + ylab('UMAP2') + theme_classic()
