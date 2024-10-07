@@ -57,7 +57,7 @@ for(j in 1:length(Cells(Expression_data))){
   }
 }
 
-print('--------ploting--------')
+
 
 c1_aneuploid = Cells(Expression_data)[Expression_data@meta.data$copykatclass %in% 'aneuploid']
 c1_diploid= Cells(Expression_data)[Expression_data@meta.data$copykatclass == 'diploid']
@@ -67,7 +67,7 @@ DimPlot(Expression_data, reduction = "umap",label = F, repel = TRUE,  group.by =
         cells.highlight = list(c1_aneuploid,c1_diploid), pt.size = 1, sizes.highlight = 1,, 
         cols.highlight = c('#08bf2f','#4C78B9'), label.size = 0) +
   guides(color = guide_legend(override.aes = list(size = 6), ncol =1)) +
-  scale_color_manual(labels = c('Aneuploid', 'Diploid', NA), values = c('#4C78B9','#08bf2f', '#bcbcbc'), breaks = c('Group_1', 'Group_2', 'Unselected')) + 
+  scale_color_manual(labels = c('Cell number altered', 'Cell number normal', NA), values = c('#4C78B9','#08bf2f', '#bcbcbc'), breaks = c('Group_1', 'Group_2', 'Unselected')) + 
   ggtitle( '') +  xlab('UMAP1') + ylab('UMAP2') + labs(colour = "") + theme_classic()
 ggsave( './Figures/umap_copykat.png',  width = 10, height = 10, dpi = 300)
 ##### Optional CopyKAT analysis #####
@@ -146,7 +146,7 @@ dim(combo_cell_enrichMat)
 
 
 ##### Step 4: monotherapy response prediction #####
-processed_data = as.data.frame(drug_cell_enrichMat); processed_data$labeloutput = as.numeric(dss_aml1$dss) 
+processed_data = as.data.frame(drug_cell_enrichMat); processed_data$labeloutput = as.numeric(dss_aml1$DSS) 
 
 ###use grid search and 5-fold cross validation to fine-tune the xgboost model
 ###parameter set
@@ -239,7 +239,7 @@ processed_data_err = processed_data; processed_data_err$labeloutput = err_;
 CORvalgl_err <<- list()
 
 ###parameter set
-des <- expand.grid(
+des_err <- expand.grid(
   colsample_bytree = seq(0.3, .8, length.out = 5), 
   subsample = seq(0.5, 1.0, length.out = 5), 
   eta = seq(0.01, 0.3, length.out = 5),
@@ -324,17 +324,6 @@ models_ <- lapply(1:3, function(i){
 })
 gc(T)
 
-###top features (cells) used by the first model
-importance_matrix <- xgb.importance(colnames(processed_data[, -which(names(processed_data) == "labeloutput")]), model = models_[[1]])
-xgb.plot.importance(importance_matrix, rel_to_first = TRUE, xlab = "Relative importance")
-
-###UMAP showing the feature importance for  each cell   ---> to be modified 
-#Expression_data@meta.data$featureImportance <- c(0)
-# Expression_data@meta.data$featureImportance <- NULL  
-# Expression_data@meta.data$featureImportance[Cells(Expression_data) %in% importance_matrix$Feature] <- importance_matrix$Importance
-# FeaturePlot(Expression_data, features = 'featureImportance', pt.size = 3, order = T) +
-#   xlab('UMAP1') + ylab('UMAP2') + theme_classic()
-# ggsave(paste0(path0, './Figures/umap_featureImportance.png'),  width = 10, height = 10, dpi = 300)
 
 ###predict best combinations
 ypredComb = sapply(1:length(models_), function(i){
@@ -351,7 +340,7 @@ combo_cell_enrichMat = combo_cell_enrichMat[!(rownames(combo_cell_enrichMat) %in
 ##### Step 7: combination selection: HSA calculation #####
 ###Calculate HSA synergy score for combinations
 Combinations_$HSA_exp = sapply(strsplit(Combinations_$combis, "\\,"), function(i){
-  max(as.numeric(dss_aml1[dss_aml1$drug == i[[1]], "dss"]), as.numeric(dss_aml1[dss_aml1$drug == i[[2]], "dss"]))
+  max(as.numeric(dss_aml1[dss_aml1$Drug == i[[1]], "DSS"]), as.numeric(dss_aml1[dss_aml1$Drug == i[[2]], "DSS"]))
 })
 Combinations_$Synergy = Combinations_$pred - Combinations_$HSA_exp
 
@@ -374,8 +363,8 @@ for (i in unique(Expression_data$customclassif)){
 
 
 ###t-NSE score for cancer and normal cells
-cancer_celltype <- unique(Expression_data@meta.data[["customclassif"]][Expression_data@meta.data[["malignant"]] ] )
-normal_celltype <- unique(Expression_data@meta.data[["customclassif"]][Expression_data@meta.data[["nonmalignant"]] ] )
+cancer_celltype <- unique(Expression_data@meta.data[["customclassif"]][Expression_data@meta.data[["CancerCells"]] ] )
+normal_celltype <- unique(Expression_data@meta.data[["customclassif"]][Expression_data@meta.data[["NormalCells"]] ] )
 tnse[, 'CancerClusters'] = rowMeans(as.matrix(tnse[, cancer_celltype ]))
 tnse[, 'NormalClusters'] = rowMeans(as.matrix(tnse[, normal_celltype ]))
 Combinations_[,"selective_toxicity"] <- tnse$CancerClusters - tnse$NormalClusters
@@ -383,8 +372,8 @@ Combinations_[,"selective_toxicity"] <- tnse$CancerClusters - tnse$NormalCluster
 
 ##### Step 9: final selection of combinations for validation #####
 ###select combinations with expected synergy HSA > 5
-Combinations_ = Combinations_[Combinations_$Synergy > 5]
+Combinations_ = Combinations_[Combinations_$Synergy > 5, ]
 ###select combinations with highest expected efficacy
-Combinations_ = Combinations_[Combinations_$pred > quantile(Combinations_$pred, .9),]
+Combinations_ = Combinations_[Combinations_$pred > quantile(Combinations_$pred, .9), ]
 ###select combinations with higher t-NSE score differences between the cancer and normal cells 
-Combinations_ = Combinations_[Combinations_$selective_toxicity > quantile(Combinations_$selective_toxicity, .5),]
+Combinations_ = Combinations_[Combinations_$selective_toxicity > quantile(Combinations_$selective_toxicity, .5), ]
