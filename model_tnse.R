@@ -17,6 +17,7 @@ setwd(dir = file.path(path_to_working_directory, 'RR-AML-main'))
 ##### Step 1: load and process the scRNA-seq data #####
 ###normalized single cell data with cell types annotated with ScType, and defined malignant and non-malignnat cells
 ###Take the relapsed AML2 sample as an example 
+#Expression_data <- readRDS( './exampleData/scAML2D_re.rds' ) #For the diagnosis sample
 Expression_data <- readRDS( './exampleData/scAML2R_re.rds' )    
 ###UMAP showing cell type identification with scType (https://github.com/IanevskiAleksandr/sc-type)
 DimPlot(Expression_data, reduction = "umap", label = !0, repel = !0, group.by = 'customclassif') +
@@ -75,6 +76,7 @@ ggsave( './Figures/umap_copykat.png',  width = 10, height = 10, dpi = 300)
 
 ##### Step 2: process drug-target interactions #####
 ###load the compound information, including the drug sensitivity scores (DSS) and drug targets 
+#path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2D.csv'  ##For the diagnosis sample
 path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2R.csv' 
 dss_aml1 <- read.csv(path_to_DrugInfo, header = T,sep = ',', check.names = F)
 
