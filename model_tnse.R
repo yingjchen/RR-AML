@@ -31,47 +31,7 @@ g_symb <- checkGeneSymbols(rownames(scale_data))
 scale_data <- scale_data[!is.na(g_symb$Suggested.Symbol), ]; g_symb <- g_symb[!is.na(g_symb$Suggested.Symbol), ]
 rownames(scale_data) <- g_symb$Suggested.Symbol; rownames_scale_data <- rownames(scale_data)
 
-##### Optional CopyKAT analysis #####
-###identify aneuploid/diploid cells using CopyKAT tool (https://github.com/navinlabcode/copykat)
-basecells = c( "Naive CD8+ T cells","Naive CD4+ T cells","Memory CD8+ T cells","Memory CD4+ T cells","Effector CD8+ T cells","Effector CD4+ T cells", "CD4+ NKT-like cells", "CD8+ NKT-like cells")
-exp.rawdata <- as.matrix(Expression_data@assays$RNA@counts) # generating this UMI count matrix from 10X output.
-normcellnames <- as.character(Cells(Expression_data)[Expression_data@meta.data$customclassif %in% basecells])
-copykat.test <- copykat(rawmat=exp.rawdata, id.type ="S", ngene.chr = 5, win.size = 25, KS.cut = 0.1, sam.name = "test", distance = "euclidean", norm.cell.names = normcellnames,output.seg = "FLASE", plot.genes = "TRUE", genome = "hg20",n.cores = 1)
 
-pred.test <- read_delim("./test_copykat_prediction.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-CNA.test <- read_delim("./test_copykat_CNA_results.txt", delim = "\t", escape_double = FALSE, trim_ws = TRUE)
-colnameCNA = colnames(CNA.test)
-for(i in 4:ncol(CNA.test)){
-  tmp = strsplit(colnames(CNA.test)[i], ".1")
-  colnameCNA[i] = paste0(tmp, '-1')
-}
-length(colnameCNA)
-colnames(CNA.test) = colnameCNA
-
-pred.test <- pred.test[-which(pred.test$copykat.pred=="not.defined"),]
-
-Expression_data@meta.data$copykatclass = NA
-#UMAP showing aneuploid and dipoid cell classification based on CopyKAT
-for(j in 1:length(Cells(Expression_data))){
-  if (Cells(Expression_data)[j] %in% pred.test$cell.names){
-    Expression_data@meta.data$copykatclass[j] = as.character(pred.test$copykat.pred[pred.test$cell.names == Cells(Expression_data)[j]])
-  }
-}
-
-
-
-c1_aneuploid = Cells(Expression_data)[Expression_data@meta.data$copykatclass %in% 'aneuploid']
-c1_diploid= Cells(Expression_data)[Expression_data@meta.data$copykatclass == 'diploid']
-
-
-DimPlot(Expression_data, reduction = "umap",label = F, repel = TRUE,  group.by = 'customclassif',
-        cells.highlight = list(c1_aneuploid,c1_diploid), pt.size = 1, sizes.highlight = 1,, 
-        cols.highlight = c('#08bf2f','#4C78B9'), label.size = 0) +
-  guides(color = guide_legend(override.aes = list(size = 6), ncol =1)) +
-  scale_color_manual(labels = c('Cell number altered', 'Cell number normal', NA), values = c('#4C78B9','#08bf2f', '#bcbcbc'), breaks = c('Group_1', 'Group_2', 'Unselected')) + 
-  ggtitle( '') +  xlab('UMAP1') + ylab('UMAP2') + labs(colour = "") + theme_classic()
-ggsave( './Figures/umap_copykat.png',  width = 10, height = 10, dpi = 300)
-##### Optional CopyKAT analysis #####
 
 
 ##### Step 2: process drug-target interactions #####
