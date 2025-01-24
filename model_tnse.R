@@ -1,7 +1,7 @@
 ###The script contains the code to train and test the sample-specific XGBoost model, predict combination responses and calculate the t-NSE scores.
 ###load the necessary packages
 
-pkgs <- c("dplyr","Seurat","HGNChelper", "copykat","readr","ggplot2", "parallel", "HGNChelper", "GSVA", "xgboost", "caret", "ModelMetrics")
+pkgs <- c("dplyr","Seurat","HGNChelper", "readr","ggplot2", "parallel", "HGNChelper", "GSVA", "xgboost", "caret", "ModelMetrics")
 lapply(pkgs, library, character.only = T)
 
 
