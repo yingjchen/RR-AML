@@ -110,7 +110,7 @@ AML2,AML2R,Lasofoxifene,Hormone therapy,Selective estrogen receptor modulator,0.
 AML2,AML2R,BMS863233,Kinase inhibitor,Cdc7 inhibitor,3.6,"CDC7,CDC7"
 AML2,AML2R,PCI-34051,Differentiating/ epigenetic modifier,HDAC8 inhibitor,0.9,HDAC8
 AML2,AML2R,Pazopanib,Kinase inhibitor,VEGFR inhibitor,0,"VEGFR,ABL1,AURKC,BRAF,CSF1R,DDR1,DDR2,EPHB6,FGFR1,FGFR2,FGFR3,FLT1,FLT4,FRK,GAK,IRAK3,KDR,KIT,LIMK1,LIMK2,LYN,MAP2K4,MAP2K5,MAP3K11,MAP3K19,MAP3K2,MAP3K9,MAP4K1,NEK2,PDGFRA,PDGFRB,PI4KB,PIP4K2C,PLK4,RAF1,RIOK2,RIPK1,RIPK2,ROS1,STK10,STK16,STK36,TAOK1,TAOK3,TIE1,TNIK,TTK"
-AML2,AML2R,Azacitidine,Differentiating/ epigenetic modifier,"Pyrimidine analog, DNA methyl transferase inhibitor",3.1,"PYRIMIDINE,DNMT,TRIT1,TAGLN"
+AML2,AML2R,Azacitidine,Differentiating/ epigenetic modifier,"Pyrimidine analog, DNA methyl transferase inhibitor",3.1,DNMT1
 AML2,AML2R,Motesanib,Kinase inhibitor,"VEGFR, PDGFR, Ret, Kit inhibitor",0,"VEGFR,PDGFR,RET,KIT,BRAF,CIT,CSF1R,DDR1,EPHA6,FLT1,FLT4,FRK,KDR,KIT,LCK,LYN,MAP3K19,PDGFRA,PDGFRB,RAF1,RET,TNNI3K,ZAK"
 AML2,AML2R,Decitabine,Differentiating/ epigenetic modifier,"Pyrimidine analog, DNA methyl transferase inhibitor",2.7,"DNMT,DNMT1,DNMT3A,TET2,ASXL1,MUC2"
 AML2,AML2R,Seliciclib,Kinase inhibitor,CDK2/7/9 inhibitor,3,"CDK2,CDK7,CDK9,CCNA2,CCNB1,CLK2,CSNK1D,CSNK1E"

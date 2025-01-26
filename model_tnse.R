@@ -1,12 +1,12 @@
 ###The script contains the code to train and test the sample-specific XGBoost model, predict combination responses and calculate the t-NSE scores.
 ###load the necessary packages
 
-pkgs <- c("dplyr","Seurat","HGNChelper", "readr","ggplot2", "parallel", "HGNChelper", "GSVA", "xgboost", "caret", "ModelMetrics")
+pkgs <- c("dplyr","Seurat","HGNChelper", "readr","ggplot2", "xgboost", "caret", "ModelMetrics",  "Biobase")
 lapply(pkgs, library, character.only = T)
 
 
 ###replace the working directory replace '/path/to/working/directory/' with the desired path
-path_to_working_directory <- '/path/to/working/directory/'
+path_to_working_directory <- '/path/to/working/directory/' 
 setwd(dir = path_to_working_directory)
 
 download.file(url = 'https://github.com/yingjchen/RR-AML/archive/refs/heads/main.zip', destfile = 'RR-AML-main.zip')
@@ -17,12 +17,12 @@ setwd(dir = file.path(path_to_working_directory, 'RR-AML-main'))
 ##### Step 1: load and process the scRNA-seq data #####
 ###normalized single cell data with cell types annotated with ScType, and defined malignant and non-malignnat cells
 ###Take the relapsed AML2 sample as an example 
-#Expression_data <- readRDS( './exampleData/scAML2D_re.rds' ) #For the diagnosis sample
-Expression_data <- readRDS( './exampleData/scAML2R_re.rds' )    
+#Expression_data <- readRDS( './exampleData/scAML2D.rds' ) #For the diagnosis sample
+Expression_data <- readRDS( './exampleData/scAML2R.rds' ) #For the relapse sample
 ###UMAP showing cell type identification with scType (https://github.com/IanevskiAleksandr/sc-type)
 DimPlot(Expression_data, reduction = "umap", label = !0, repel = !0, group.by = 'customclassif') +
   xlab('UMAP1') + ylab('UMAP2') + theme_classic()
-ggsave('./Figures/umap_sctype.png',  width = 10, height = 10, dpi = 300)
+ggsave('./Figures/umap_scAML2R_sctype.png',  width = 10, height = 10, dpi = 300)
 
 ###check gene symbols
 scale_data <- Expression_data@assays[["RNA"]]@scale.data
@@ -37,7 +37,7 @@ rownames(scale_data) <- g_symb$Suggested.Symbol; rownames_scale_data <- rownames
 ##### Step 2: process drug-target interactions #####
 ###load the compound information, including the drug sensitivity scores (DSS) and drug targets 
 #path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2D.csv'  ##For the diagnosis sample
-path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2R.csv' 
+path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2R.csv'  ##For the relapse sample
 dss_aml1 <- read.csv(path_to_DrugInfo, header = T,sep = ',', check.names = F)
 
 ###remove drugs without target information
@@ -112,6 +112,7 @@ processed_data = as.data.frame(drug_cell_enrichMat); processed_data$labeloutput 
 
 ###use grid search and 5-fold cross validation to fine-tune the xgboost model
 ###parameter set
+###span the hyperparamters (colsample_bytree, subsample, eta, min_child, etc) with different steps and create the combinations of these ranges
 des <- expand.grid(
   colsample_bytree = seq(0.3, .8, length.out = 5), 
   subsample = seq(0.5, 1.0, length.out = 5), 
@@ -186,7 +187,9 @@ pred_CV = do.call("cbind",lapply(CORvalgl_top, function(i){
 }))
 
 # just check how well average out-of-fold predictions correlate with real drug responses
-plot(rowMeans(pred_CV), as.numeric(as.character(processed_data$labeloutput)))
+df.res <- data.frame(predCV = rowMeans(pred_CV), labeloutput = as.numeric(as.character(processed_data$labeloutput)))
+ggplot(df.res, aes(x = predCV, y = labeloutput))+
+  geom_point() + geom_smooth(method=lm)+ theme_classic()
 ggsave( './Figures/scatter_AML2R_withoutCP.png',  width = 10, height = 10, dpi = 300)
 cor(rowMeans(pred_CV), as.numeric(as.character(processed_data$labeloutput)))
 
@@ -269,7 +272,9 @@ pred_to_remove <- grep(paste(rownames(processed_data)[alpha > quantile(alpha, co
 
 
 wh = alpha < alphas[length(alphas)*confidence_level]
-plot(rowMeans(pred_CV)[wh], as.numeric(as.character(processed_data$labeloutput))[wh])
+df.res <- data.frame(predCV = rowMeans(pred_CV)[wh], labeloutput = as.numeric(as.character(processed_data$labeloutput))[wh])
+ggplot(df.res, aes(x = predCV, y = labeloutput))+
+  geom_point() + geom_smooth(method=lm)+ theme_classic()
 ggsave( './Figures/scatter_AML2R_withCP.png',  width = 10, height = 10, dpi = 300)
 cor(rowMeans(pred_CV)[wh], as.numeric(as.character(processed_data$labeloutput))[wh])
 ###Conformal end###

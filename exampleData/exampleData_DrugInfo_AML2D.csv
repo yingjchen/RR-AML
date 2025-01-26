@@ -52,7 +52,7 @@ AML2,AML2D,Rocilinostat,Differentiating/ epigenetic modifier,HDAC-6 selective in
 AML2,AML2D,Marimastat,Other,"MMP-9, MMP-1, MMP-2, MMP-14, MMP-7 inhibitor",0,"MMP9,MMP1,MMP2,MMP14,MMP7,MMP9,MMP3,MMP7,MMP2,MMP1,ADAM17,ADAM10,MMP1,MMP13,MMP2,MMP3,MMP7,MMP8,MMP9"
 AML2,AML2D,PD184352,Kinase inhibitor,MEK1/2 inhibitor,4.2,"MEK1,MEK2,MAP3K2,MAP2K1,MAP2K2"
 AML2,AML2D,Pazopanib,Kinase inhibitor,VEGFR inhibitor,0,"VEGFR,ABL1,AURKC,BRAF,CSF1R,DDR1,DDR2,EPHB6,FGFR1,FGFR2,FGFR3,FLT1,FLT4,FRK,GAK,IRAK3,KDR,KIT,LIMK1,LIMK2,LYN,MAP2K4,MAP2K5,MAP3K11,MAP3K19,MAP3K2,MAP3K9,MAP4K1,NEK2,PDGFRA,PDGFRB,PI4KB,PIP4K2C,PLK4,RAF1,RIOK2,RIPK1,RIPK2,ROS1,STK10,STK16,STK36,TAOK1,TAOK3,TIE1,TNIK,TTK"
-AML2,AML2D,Azacitidine,Differentiating/ epigenetic modifier,"Pyrimidine analog, DNA methyl transferase inhibitor",0,"PYRIMIDINE,DNMT,TRIT1,TAGLN"
+AML2,AML2D,Azacitidine,Differentiating/ epigenetic modifier,"Pyrimidine analog, DNA methyl transferase inhibitor",0,DNMT1
 AML2,AML2D,Ibrutinib,Kinase inhibitor,Btk inhibitor,0,"BTK,BTK,PLCG2,MYD88,BLK,BMX,BTK,EGFR,ERBB4,FGFR2,FGR,FYN,HCK,ITK,LYN,PTK6,RET,YES1"
 AML2,AML2D,Buparlisib,Kinase inhibitor,"PI3K inhibitor, pan-class I",4.7,"PAN-PI3K,PIK3CA,PIK3CB,PIK3CD,PIK3CG"
 AML2,AML2D,C646,Differentiating/ epigenetic modifier,p300/CREB-binding protein (CBP) inhibitor,1.7,"P300,CBP"
