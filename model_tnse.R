@@ -1,12 +1,13 @@
 ###The script contains the code to train and test the sample-specific XGBoost model, predict combination responses and calculate the t-NSE scores.
 ###load the necessary packages
 
-pkgs <- c("dplyr","Seurat","HGNChelper", "readr","ggplot2", "xgboost", "caret", "ModelMetrics",  "Biobase")
+pkgs <- c("dplyr","Seurat","HGNChelper", "readr","ggplot2", "xgboost", "caret", "ModelMetrics", "Biobase", "openxlsx")
 lapply(pkgs, library, character.only = T)
 
 
 ###replace the working directory replace '/path/to/working/directory/' with the desired path
-path_to_working_directory <- '/path/to/working/directory/' 
+#path_to_working_directory <- '/path/to/working/directory/' 
+#path_to_working_directory <- '/Users/yingche/Desktop/AMLcombo_1304/manuscript18122023/githubCode/RR-AML'
 setwd(dir = path_to_working_directory)
 
 download.file(url = 'https://github.com/yingjchen/RR-AML/archive/refs/heads/main.zip', destfile = 'RR-AML-main.zip')
@@ -15,14 +16,57 @@ setwd(dir = file.path(path_to_working_directory, 'RR-AML-main'))
 
 
 ##### Step 1: load and process the scRNA-seq data #####
-###normalized single cell data with cell types annotated with ScType, and defined malignant and non-malignnat cells
-###Take the relapsed AML2 sample as an example 
-#Expression_data <- readRDS( './exampleData/scAML2D.rds' ) #For the diagnosis sample
-Expression_data <- readRDS( './exampleData/scAML2R.rds' ) #For the relapse sample
-###UMAP showing cell type identification with scType (https://github.com/IanevskiAleksandr/sc-type)
+###normalized single cell data with cell types annotated with ScType (https://github.com/IanevskiAleksandr/sc-type), and defined cancer and normal cells
+###Note that the scRNA-seq data of paired samples AML2D and AML2R with reduced genes were provided as example scRNA-seq profiles used in modelling
+#Expression_data <- readRDS( './exampleData/scAML2D_example.rds' ) #For the diagnosis sample
+Expression_data <- readRDS( './exampleData/scAML2R_example.rds' )    #For the relapse sample
+
+
+##### Optional ScType analysis with updated marker database #####
+### Code adapted from the GitHub repository: https://github.com/IanevskiAleksandr/sc-type
+source("./ScType/gene_sets_prepare.R"); source("./ScType/sctype_score_.R")
+
+# get cell-type-specific gene sets from our in-built database (DB)
+db_file_xlsx <- openxlsx::read.xlsx('./ScType/ScTypeDB_full_new.xlsx')
+gs_list <- gene_sets_prepare(db_file_xlsx, "Immune system") # e.g. Immune system, Liver, Pancreas, Kidney, Eye, Brain
+
+seurat_package_v5 <- isFALSE('counts' %in% names(attributes(Expression_data[["RNA"]])));
+print(sprintf("Seurat object %s is used", ifelse(seurat_package_v5, "v5", "v4")))
+
+# extract scaled scRNA-seq matrix
+scRNAseqData_scaled <- if (seurat_package_v5) as.matrix(Expression_data[["RNA"]]$scale.data) else as.matrix(Expression_data[["RNA"]]@scale.data)
+dim(scRNAseqData_scaled)
+
+# run ScType
+es.max <- sctype_score(scRNAseqData = scRNAseqData_scaled, scaled = TRUE, gs = gs_list$gs_positive, gs2 = gs_list$gs_negative)
+
+# NOTE: scRNAseqData parameter should correspond to your input scRNA-seq matrix. For raw (unscaled) count matrix set scaled = FALSE
+# When using Seurat, we use "RNA" slot with 'scale.data' by default. Please change "RNA" to "SCT" for sctransform-normalized data,
+# or to "integrated" for joint dataset analysis. To apply sctype with unscaled data, use e.g. Expression_data[["RNA"]]$counts or Expression_data[["RNA"]]@counts, with scaled set to FALSE.
+
+# merge by cluster
+cL_resutls <- do.call("rbind", lapply(unique(Expression_data@meta.data$seurat_clusters), function(cl){
+  es.max.cl = sort(rowSums(es.max[ ,rownames(Expression_data@meta.data[Expression_data@meta.data$seurat_clusters==cl, ])]), decreasing = !0)
+  head(data.frame(cluster = cl, type = names(es.max.cl), scores = es.max.cl, ncells = sum(Expression_data@meta.data$seurat_clusters==cl)), 10)
+}))
+
+sctype_scores <- cL_resutls %>% group_by(cluster) %>% top_n(n = 3, wt = scores)  
+
+# set low-confident (low ScType score) clusters to "unknown"
+sctype_scores$type[as.numeric(as.character(sctype_scores$scores)) < sctype_scores$ncells/5] <- "Unknown"
+
+Expression_data@meta.data$customclassif = ""
+for(j in unique(sctype_scores$cluster)){
+  cl_type = sctype_scores[sctype_scores$cluster==j,]; 
+  Expression_data@meta.data$customclassif[Expression_data@meta.data$seurat_clusters == j] = as.character(cl_type$type[1])
+}
+##### Optional ScType analysis with updated marker database #####
+
+
+###UMAP showing cell type identification with scType
 DimPlot(Expression_data, reduction = "umap", label = !0, repel = !0, group.by = 'customclassif') +
   xlab('UMAP1') + ylab('UMAP2') + theme_classic()
-ggsave('./Figures/umap_scAML2R_sctype.png',  width = 10, height = 10, dpi = 300)
+#ggsave('./Figures/umap_AML2R_sctype.png',  width = 10, height = 10, dpi = 300)
 
 ###check gene symbols
 scale_data <- Expression_data@assays[["RNA"]]@scale.data
@@ -32,12 +76,10 @@ scale_data <- scale_data[!is.na(g_symb$Suggested.Symbol), ]; g_symb <- g_symb[!i
 rownames(scale_data) <- g_symb$Suggested.Symbol; rownames_scale_data <- rownames(scale_data)
 
 
-
-
 ##### Step 2: process drug-target interactions #####
 ###load the compound information, including the drug sensitivity scores (DSS) and drug targets 
 #path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2D.csv'  ##For the diagnosis sample
-path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2R.csv'  ##For the relapse sample
+path_to_DrugInfo <-  './exampleData/exampleData_DrugInfo_AML2R.csv' 
 dss_aml1 <- read.csv(path_to_DrugInfo, header = T,sep = ',', check.names = F)
 
 ###remove drugs without target information
@@ -83,8 +125,8 @@ AllCombinations = expand.grid(names(gs_),names(gs_),stringsAsFactors = FALSE)
 AllCombinations = AllCombinations[AllCombinations$Var1 != AllCombinations$Var2, ]
 
 
-AllCombinations$merged = sapply(1:nrow(AllCombinations), function(i) paste0(sort(unlist(AllCombinations[i,])), collapse = ","))  #131406
-AllCombinations$Var1 = AllCombinations$Var2 = NULL; AllCombinations_unique = unique(AllCombinations$merged)  #remove the replicated combos 65703
+AllCombinations$merged = sapply(1:nrow(AllCombinations), function(i) paste0(sort(unlist(AllCombinations[i,])), collapse = ","))  
+AllCombinations$Var1 = AllCombinations$Var2 = NULL; AllCombinations_unique = unique(AllCombinations$merged)  #remove the replicated combos
 
 ###target sets of combinations
 gs_combis = sapply(1:length(AllCombinations_unique), function(i_){
@@ -115,8 +157,10 @@ processed_data = as.data.frame(drug_cell_enrichMat); processed_data$labeloutput 
 ###span the hyperparamters (colsample_bytree, subsample, eta, min_child, etc) with different steps and create the combinations of these ranges
 des <- expand.grid(
   colsample_bytree = seq(0.3, .8, length.out = 5), 
-  subsample = seq(0.5, 1.0, length.out = 5), 
-  eta = seq(0.01, 0.3, length.out = 5),
+  #subsample = seq(0.5, 1.0, length.out = 5), 
+  #eta = seq(0.01, 0.3, length.out = 5),
+  subsample = 0.5,
+  eta = 0.01,
   min_child = 1,
   max_depth = 6,
   lambda = 1
@@ -128,7 +172,7 @@ des <- expand.grid(
 
 CORvalgl <<- list()
 
-###Source code: https://github.com/IanevskiAleksandr/scComb
+###Code adapted from the GitHub repository: https://github.com/IanevskiAleksandr/scComb
 ###generate an objective function and start training
 obj.fun = function(x) {
   
@@ -145,7 +189,7 @@ obj.fun = function(x) {
       
       # set N cores = detectCores()-1, feel free to change
       fit = xgboost(data=data.matrix(trainData[, -which(names(trainData) == "labeloutput")]),label = trainData$labeloutput, verbose = F, 
-                    nthread = (parallel::detectCores()-1), nrounds = 1024, 
+                    nthread = (parallel::detectCores()-1),  nrounds = 1024,
                     params=list(objective = "reg:squarederror", max.depth = maxdepth[[1]], eta=eta[[1]], lambda = lambda[[1]], 
                                 min_child_weight = minchild[[1]],
                                 colsample_bytree = colsample_bytree[[1]], subsample = subsample[[1]]))
@@ -205,9 +249,11 @@ CORvalgl_err <<- list()
 
 ###parameter set
 des_err <- expand.grid(
-  colsample_bytree = seq(0.3, .8, length.out = 5), 
-  subsample = seq(0.5, 1.0, length.out = 5), 
-  eta = seq(0.01, 0.3, length.out = 5),
+  colsample_bytree = seq(0.3, .8, length.out = 3),  #5, to change
+  #subsample = seq(0.5, 1.0, length.out = 5), 
+  #eta = seq(0.01, 0.3, length.out = 5),
+  subsample = 0.5,
+  eta = 0.01,
   min_child = 1,
   max_depth = 6,
   lambda = 1
@@ -262,7 +308,7 @@ pred_CV_err = do.call("cbind",lapply(CORvalgl_top_err, function(i){
 }))
 
 ###calculate alpha (conformity scores)
-confidence_level = 0.8 # confidence level used for conformity score (0.8 was used as a threshold in the paper), 
+confidence_level = 0.8 # confidence level used for conformity score (0.8 was used as a threshold in the paper)
 alpha <- abs(processed_data$labeloutput - pred_CV[,1]) / pred_CV_err[,1]
 alphas <- (sort(alpha))
 
@@ -312,7 +358,7 @@ Combinations_$HSA_exp = sapply(strsplit(Combinations_$combis, "\\,"), function(i
 Combinations_$Synergy = Combinations_$pred - Combinations_$HSA_exp
 
 
-##### Step 8: combination selection: t-NSE calculation #####
+##### Step 8: t-NSE calculation for combination selection #####
 ###selective toxicity (estimation), we want to take combinations with the largest t-NSE difference between the malignant cell and non-malignant cells
 ###based on combo_cell_enrichMat
 combo_cell_enrichMat = combo_cell_enrichMat[rownames(Combinations_), ]
@@ -337,10 +383,12 @@ tnse[, 'NormalClusters'] = rowMeans(as.matrix(tnse[, normal_celltype ]))
 Combinations_[,"selective_toxicity"] <- tnse$CancerClusters - tnse$NormalClusters
 
 
-##### Step 9: final selection of combinations for validation #####
+##### Step 9: selection of combinations for each sample #####
 ###select combinations with expected synergy HSA > 5
 Combinations_ = Combinations_[Combinations_$Synergy > 5, ]
 ###select combinations with highest expected efficacy
 Combinations_ = Combinations_[Combinations_$pred > quantile(Combinations_$pred, .9), ]
 ###select combinations with higher t-NSE score differences between the cancer and normal cells 
 Combinations_ = Combinations_[Combinations_$selective_toxicity > quantile(Combinations_$selective_toxicity, .5), ]
+###save the selected combinations for the specific sample
+#write.csv(Combinations_, '../results/Combinations_AML2R_selected.csv')
