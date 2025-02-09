@@ -6,8 +6,7 @@ lapply(pkgs, library, character.only = T)
 
 
 ###replace the working directory replace '/path/to/working/directory/' with the desired path
-#path_to_working_directory <- '/path/to/working/directory/' 
-#path_to_working_directory <- '/Users/yingche/Desktop/AMLcombo_1304/manuscript18122023/githubCode/RR-AML'
+path_to_working_directory <- '/path/to/working/directory/' 
 setwd(dir = path_to_working_directory)
 
 download.file(url = 'https://github.com/yingjchen/RR-AML/archive/refs/heads/main.zip', destfile = 'RR-AML-main.zip')
@@ -234,7 +233,7 @@ pred_CV = do.call("cbind",lapply(CORvalgl_top, function(i){
 df.res <- data.frame(predCV = rowMeans(pred_CV), labeloutput = as.numeric(as.character(processed_data$labeloutput)))
 ggplot(df.res, aes(x = predCV, y = labeloutput))+
   geom_point() + geom_smooth(method=lm)+ theme_classic()
-ggsave( './Figures/scatter_AML2R_withoutCP.png',  width = 10, height = 10, dpi = 300)
+#ggsave( './Figures/scatter_AML2R_withoutCP.png',  width = 10, height = 10, dpi = 300)
 cor(rowMeans(pred_CV), as.numeric(as.character(processed_data$labeloutput)))
 
 
@@ -249,7 +248,7 @@ CORvalgl_err <<- list()
 
 ###parameter set
 des_err <- expand.grid(
-  colsample_bytree = seq(0.3, .8, length.out = 3),  #5, to change
+  colsample_bytree = seq(0.3, .8, length.out = 5), 
   #subsample = seq(0.5, 1.0, length.out = 5), 
   #eta = seq(0.01, 0.3, length.out = 5),
   subsample = 0.5,
@@ -321,7 +320,7 @@ wh = alpha < alphas[length(alphas)*confidence_level]
 df.res <- data.frame(predCV = rowMeans(pred_CV)[wh], labeloutput = as.numeric(as.character(processed_data$labeloutput))[wh])
 ggplot(df.res, aes(x = predCV, y = labeloutput))+
   geom_point() + geom_smooth(method=lm)+ theme_classic()
-ggsave( './Figures/scatter_AML2R_withCP.png',  width = 10, height = 10, dpi = 300)
+#ggsave( './Figures/scatter_AML2R_withCP.png',  width = 10, height = 10, dpi = 300)
 cor(rowMeans(pred_CV)[wh], as.numeric(as.character(processed_data$labeloutput))[wh])
 ###Conformal end###
 
