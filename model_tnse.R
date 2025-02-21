@@ -358,7 +358,7 @@ Combinations_$Synergy = Combinations_$pred - Combinations_$HSA_exp
 
 
 ##### Step 8: t-NSE calculation for combination selection #####
-###selective toxicity (estimation), we want to take combinations with the largest t-NSE difference between the malignant cell and non-malignant cells
+###selective toxicity (estimation), we want to take combinations with the largest t-NSE difference between the cancer and normal cells
 ###based on combo_cell_enrichMat
 combo_cell_enrichMat = combo_cell_enrichMat[rownames(Combinations_), ]
 gss <- as.data.frame(combo_cell_enrichMat)
@@ -390,4 +390,4 @@ Combinations_ = Combinations_[Combinations_$pred > quantile(Combinations_$pred, 
 ###select combinations with higher t-NSE score differences between the cancer and normal cells 
 Combinations_ = Combinations_[Combinations_$selective_toxicity > quantile(Combinations_$selective_toxicity, .5), ]
 ###save the selected combinations for the specific sample
-#write.csv(Combinations_, '../results/Combinations_AML2R_selected.csv')
+#write.csv(Combinations_, './Combinations_AML2R_selected.csv')
