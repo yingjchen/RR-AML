@@ -1,4 +1,4 @@
-# Prediction of selective and synergistic drug combinations for relapsed AML
+# A Machine Learning-Based Strategy Predicts Selective and Synergistic Drug Combinations for Relapsed Acute Myeloid Leukemia
 
 We develop a systematic combinatorial design strategy that uses machine learning to prioritise the most promising targeted drug combinations for relapsed/refractory AML (**RR-AML**) patients using single-cell transcriptomics and single-agent response profiles measured in primary patient samples. By utilizng the established target-based Normalized Single-cell Enrichment (**t-NSE**) score, we can quantitatively compare the co-inhibition effects of drug combinations among various cell types and prioritize combinations that exhibit high synergy and potency in co-inhibiting AML cells, while showing non-synergistic effects in non-malignant cells. The following figure illustrates the workflow of the drug combination prediction and testing pipeline (created using Biorender).
 
@@ -24,7 +24,7 @@ To install all dependencies, the version of R should be >= 4.0.5. The required p
 For any questions please contact **Yingjia Chen** (yingjia.chen@helsinki.fi)
 
 # Copyright and license
-Code copyright *Prediction of selective and synergistic drug combinations for relapsed AML*
+Code copyright *A Machine Learning-Based Strategy Predicts Selective and Synergistic Drug Combinations for Relapsed Acute Myeloid Leukemia*
 
 License <https://github.com/yingjchen/RR-AML/blob/main/LICENSE>
 
